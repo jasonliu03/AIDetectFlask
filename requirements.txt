@@ -1,0 +1,11 @@
+Click==7.0
+Flask==1.0.2
+get==2018.11.19
+itsdangerous==1.1.0
+Jinja2==2.10
+MarkupSafe==1.1.0
+post==2018.11.20
+public==2018.11.20
+-e git+https://guojindev@bitbucket.org/zhiyuntcm/pydiagnosis.git@3a15dd5dbc402708157e4ab9484d89584e2ced63#egg=pydiagnosis
+query-string==2018.11.20
+Werkzeug==0.14.1
