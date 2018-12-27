@@ -7,22 +7,24 @@ from uuid import uuid4
 
 from flask import request, jsonify, abort
 
-from pydiagnosis import glassDetect
+from pydiagnosis import autoPhoto, autoPhotoTongue, glassDetect
 from flask import Flask
 app = Flask(__name__)
 
-@app.route("/testGlassDetect")
+@app.route("/")
 def testGlassDetect():
-    return "glassDetect"
+    return "ai detect"
 
 
 class PhotoType(Enum):
-    faceDetect = 1
-    tongueDetect = 2
+    autoPhoto = 1
+    autoPhotoTongue = 2
     glassDetect = 3
 
 
 ANALYZE_FUNCTIONS = {
+    PhotoType.autoPhoto: autoPhoto,
+    PhotoType.autoPhotoTongue: autoPhotoTongue,
     PhotoType.glassDetect: glassDetect,
 }
 
@@ -60,13 +62,21 @@ def handle_form_photo(photo, photo_type: PhotoType):
     })
 
 
+@app.route('/api/photos/autoPhoto', methods=['POST'])
+def auto_photo():
+    return handle_form_photo(PhotoType.autoPhoto)
+
+@app.route('/api/photos/autoPhotoTongue', methods=['POST'])
+def auto_photo_tongue():
+    return handle_form_photo(PhotoType.autoPhotoTongue)
+
 @app.route('/api/photos/glassDetect', methods=['POST'])
 def glass_detect():
     return handle_form_photo(PhotoType.glassDetect)
 
 
 def analyze(content: bytes, photo_type: PhotoType):
-    assert photo_type in (PhotoType.glassDetect, PhotoType.faceDetect, PhotoType.tongueDetect), 'internal error, invalid photo type: %r' % (photo_type, )
+    assert photo_type in (PhotoType.glassDetect, PhotoType.autoPhoto, PhotoType.autoPhotoTongue), 'internal error, invalid photo type: %r' % (photo_type, )
     result = ANALYZE_FUNCTIONS[photo_type](content)
     ans = result.to_dict()
     return ans
