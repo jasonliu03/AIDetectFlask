@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from flask import request, jsonify, abort
 
-from pydiagnosis import autoPhoto, autoPhotoTongue, faceDetect, tongueDetect, glassDetect
+from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect
 from flask import Flask
 app = Flask(__name__)
 
@@ -17,19 +17,18 @@ def testGlassDetect():
 
 
 class PhotoType(Enum):
-    faceDetect = 1
-    tongueDetect = 2
-    glassDetect = 3
-    autoPhoto = 4
-    autoPhotoTongue = 5
+    autoPhoto = 1
+    autoPhotoTongue = 2
+    envtDetect = 3
 
 
 ANALYZE_FUNCTIONS = {
-    PhotoType.faceDetect: faceDetect,
-    PhotoType.tongueDetect: tongueDetect,
-    PhotoType.glassDetect: glassDetect,
+    #PhotoType.faceDetect: faceDetect,
+    #PhotoType.tongueDetect: tongueDetect,
+    #PhotoType.glassDetect: glassDetect,
     PhotoType.autoPhoto: autoPhoto,
     PhotoType.autoPhotoTongue: autoPhotoTongue,
+    PhotoType.envtDetect: envtDetect,
 }
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}
@@ -57,25 +56,31 @@ def handle_form_photo(photo, photo_type: PhotoType):
 
     app.logger.info('output: %s', pprint.pformat(ans))
 
-    return jsonify({
-        'status': ans['status'],
-        'x_point': ans['x_point'],
-        'y_point': ans['y_point'],
-        'width': ans['width'],
-        'height': ans['height'],
-    })
+    if photo_type == PhotoType.envtDetect:
+        return jsonify({
+            'level': ans['level'],
+            'brightness': ans['brightness'],
+        })
+    else:
+        return jsonify({
+            'status': ans['status'],
+            'x_point': ans['x_point'],
+            'y_point': ans['y_point'],
+            'width': ans['width'],
+            'height': ans['height'],
+        })
 
-@app.route('/api/photos/faceDetect', methods=['POST'])
-def face_detect():
-    return handle_form_photo(PhotoType.faceDetect)
+#@app.route('/api/photos/faceDetect', methods=['POST'])
+#def face_detect():
+#    return handle_form_photo(PhotoType.faceDetect)
 
-@app.route('/api/photos/tongueDetect', methods=['POST'])
-def tongue_detect():
-    return handle_form_photo(PhotoType.tongueDetect)
+#@app.route('/api/photos/tongueDetect', methods=['POST'])
+#def tongue_detect():
+#    return handle_form_photo(PhotoType.tongueDetect)
 
-@app.route('/api/photos/glassDetect', methods=['POST'])
-def glass_detect():
-    return handle_form_photo(PhotoType.glassDetect)
+#@app.route('/api/photos/glassDetect', methods=['POST'])
+#def glass_detect():
+#    return handle_form_photo(PhotoType.glassDetect)
 
 @app.route('/api/photos/autoPhoto', methods=['POST'])
 def auto_photo():
@@ -85,8 +90,12 @@ def auto_photo():
 def auto_photo_tongue():
     return handle_form_photo(PhotoType.autoPhotoTongue)
 
+@app.route('/api/photos/envtDetect', methods=['POST'])
+def envt_detect():
+    return handle_form_photo(PhotoType.envtDetect)
+
 def analyze(content: bytes, photo_type: PhotoType):
-    assert photo_type in (PhotoType.faceDetect, PhotoType.tongueDetect, PhotoType.glassDetect, PhotoType.autoPhoto, PhotoType.autoPhotoTongue), 'internal error, invalid photo type: %r' % (photo_type, )
+    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect), 'internal error, invalid photo type: %r' % (photo_type, )
     result = ANALYZE_FUNCTIONS[photo_type](content)
     ans = result.to_dict()
     return ans
