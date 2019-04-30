@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from flask import request, jsonify, abort
 
-from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect
+from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect, faceKps
 from flask import Flask
 app = Flask(__name__)
 
@@ -20,6 +20,7 @@ class PhotoType(Enum):
     autoPhoto = 1
     autoPhotoTongue = 2
     envtDetect = 3
+    faceKps = 4
 
 
 ANALYZE_FUNCTIONS = {
@@ -29,6 +30,7 @@ ANALYZE_FUNCTIONS = {
     PhotoType.autoPhoto: autoPhoto,
     PhotoType.autoPhotoTongue: autoPhotoTongue,
     PhotoType.envtDetect: envtDetect,
+    PhotoType.faceKps: faceKps,
 }
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}
@@ -56,7 +58,9 @@ def handle_form_photo(photo, photo_type: PhotoType):
 
     app.logger.info('output: %s', pprint.pformat(ans))
 
-    if photo_type == PhotoType.envtDetect:
+    if photo_type == PhotoType.faceKps:
+        return jsonify(ans)
+    elif photo_type == PhotoType.envtDetect:
         return jsonify({
             'level': ans['level'],
             'brightness': ans['brightness'],
@@ -94,8 +98,12 @@ def auto_photo_tongue():
 def envt_detect():
     return handle_form_photo(PhotoType.envtDetect)
 
+@app.route('/api/photos/faceKps', methods=['POST'])
+def faceKps():
+    return handle_form_photo(PhotoType.faceKps)
+
 def analyze(content: bytes, photo_type: PhotoType):
-    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect), 'internal error, invalid photo type: %r' % (photo_type, )
+    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect, PhotoType.faceKps), 'internal error, invalid photo type: %r' % (photo_type, )
     result = ANALYZE_FUNCTIONS[photo_type](content)
     ans = result.to_dict()
     return ans
