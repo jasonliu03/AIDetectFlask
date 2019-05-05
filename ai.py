@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from flask import request, jsonify, abort
 
-from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect, faceKps
+from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect, faceKps, predictGender
 from flask import Flask
 app = Flask(__name__)
 
@@ -21,6 +21,7 @@ class PhotoType(Enum):
     autoPhotoTongue = 2
     envtDetect = 3
     faceKps = 4
+    genderDetect = 5
 
 
 ANALYZE_FUNCTIONS = {
@@ -31,6 +32,7 @@ ANALYZE_FUNCTIONS = {
     PhotoType.autoPhotoTongue: autoPhotoTongue,
     PhotoType.envtDetect: envtDetect,
     PhotoType.faceKps: faceKps,
+    PhotoType.genderDetect: predictGender,
 }
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}
@@ -60,6 +62,8 @@ def handle_form_photo(photo, photo_type: PhotoType):
 
     if photo_type == PhotoType.faceKps:
         return jsonify(ans)
+    elif photo_type == PhotoType.genderDetect:
+        return jsonify(ans)
     elif photo_type == PhotoType.envtDetect:
         return jsonify({
             'level': ans['level'],
@@ -73,6 +77,23 @@ def handle_form_photo(photo, photo_type: PhotoType):
             'width': ans['width'],
             'height': ans['height'],
         })
+
+@detect_photo_errors
+def handle_form_photo_py(photo, photo_type: PhotoType):
+    content = photo.read(-1)
+    import os
+    tmpGenderImg = os.path.join(".",photo.name)
+    destination = open(tmpGenderImg,'wb+')    # 打开特定的文件进行二进制的写操作
+    destination.write(content)
+    destination.close()
+    rst = predictGender(tmpGenderImg)
+    print("type(rst):", type(rst)) 
+    ans = {}
+    ans['status'] = rst
+    print("ans:", ans)
+    return jsonify({'status': int(ans['status'])})
+    
+
 
 #@app.route('/api/photos/faceDetect', methods=['POST'])
 #def face_detect():
@@ -102,8 +123,12 @@ def envt_detect():
 def faceKps():
     return handle_form_photo(PhotoType.faceKps)
 
+@app.route('/api/photos/genderDetect', methods=['POST'])
+def genderDetect():
+    return handle_form_photo_py(PhotoType.genderDetect)
+
 def analyze(content: bytes, photo_type: PhotoType):
-    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect, PhotoType.faceKps), 'internal error, invalid photo type: %r' % (photo_type, )
+    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect, PhotoType.faceKps, PhotoType.genderDetect), 'internal error, invalid photo type: %r' % (photo_type, )
     result = ANALYZE_FUNCTIONS[photo_type](content)
     ans = result.to_dict()
     return ans

@@ -1,11 +1,26 @@
+bleach==1.5.0
 Click==7.0
+cycler==0.10.0
+enum34==1.1.6
 Flask==1.0.2
 get==2018.11.19
+html5lib==0.9999999
 itsdangerous==1.1.0
 Jinja2==2.10
+kiwisolver==1.1.0
+Markdown==3.1
 MarkupSafe==1.1.0
+matplotlib==3.0.3
+numpy==1.16.3
+Pillow==6.0.0
 post==2018.11.20
+protobuf==3.7.1
 public==2018.11.20
--e git+https://guojindev@bitbucket.org/zhiyuntcm/pydiagnosis.git@3a15dd5dbc402708157e4ab9484d89584e2ced63#egg=pydiagnosis
+-e git+https://jasonliu003@bitbucket.org/zhiyuntcm/pydiagnosis.git@189092746dab85329f65036fe7e648691c5117dd#egg=pydiagnosis
+pyparsing==2.4.0
+python-dateutil==2.8.0
 query-string==2018.11.20
+six==1.12.0
+tensorflow-gpu==1.4.0
+tensorflow-tensorboard==0.4.0
 Werkzeug==0.14.1
