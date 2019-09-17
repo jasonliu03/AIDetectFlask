@@ -1,3 +1,4 @@
+import os
 import pprint
 from datetime import datetime
 from enum import Enum
@@ -7,7 +8,9 @@ from uuid import uuid4
 
 from flask import request, jsonify, abort
 
-from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect, faceKps, predictGender
+import cv2
+
+from pydiagnosis import autoPhoto, autoPhotoTongue, envtDetect, faceKps, predictGender, faceVerify, compare2face, faceCompare
 from flask import Flask
 app = Flask(__name__)
 
@@ -22,6 +25,7 @@ class PhotoType(Enum):
     envtDetect = 3
     faceKps = 4
     genderDetect = 5
+    faceMatch = 6
 
 
 ANALYZE_FUNCTIONS = {
@@ -32,7 +36,6 @@ ANALYZE_FUNCTIONS = {
     PhotoType.autoPhotoTongue: autoPhotoTongue,
     PhotoType.envtDetect: envtDetect,
     PhotoType.faceKps: faceKps,
-    PhotoType.genderDetect: predictGender,
 }
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}
@@ -51,6 +54,22 @@ def detect_photo_errors(f):
         return f(photo, *args, **kwargs)
     return _f
 
+def detect_photos_errors(f):
+    @wraps(f)
+    def _f(*args, **kwargs):
+        if 'photo01' not in request.files:
+            return jsonify({'error': 'no file submitted'})
+        photo01 = request.files['photo01']
+        if 'photo02' not in request.files:
+            return jsonify({'error': 'no file submitted'})
+        photo02 = request.files['photo02']
+        if not photo01.filename or not allowed_file(photo01.filename):
+            return jsonify({'error': 'invalid file type'})
+        if not photo02.filename or not allowed_file(photo02.filename):
+            return jsonify({'error': 'invalid file type'})
+        return f(photo01, photo02, *args, **kwargs)
+    return _f
+
 
 @detect_photo_errors
 def handle_form_photo(photo, photo_type: PhotoType):
@@ -63,6 +82,8 @@ def handle_form_photo(photo, photo_type: PhotoType):
     if photo_type == PhotoType.faceKps:
         return jsonify(ans)
     elif photo_type == PhotoType.genderDetect:
+        return jsonify(ans)
+    elif photo_type == PhotoType.faceMatch:
         return jsonify(ans)
     elif photo_type == PhotoType.envtDetect:
         return jsonify({
@@ -81,17 +102,42 @@ def handle_form_photo(photo, photo_type: PhotoType):
 @detect_photo_errors
 def handle_form_photo_py(photo, photo_type: PhotoType):
     content = photo.read(-1)
-    import os
     tmpGenderImg = os.path.join(".",photo.name)
     destination = open(tmpGenderImg,'wb+')    # 打开特定的文件进行二进制的写操作
     destination.write(content)
     destination.close()
-    rst = predictGender(tmpGenderImg)
+    rst = 0
+    if photo_type == PhotoType.genderDetect:
+        rst = predictGender(tmpGenderImg)
+    if photo_type == PhotoType.faceMatch:
+        rst = faceVerify(tmpGenderImg)
     print("type(rst):", type(rst)) 
     ans = {}
     ans['status'] = rst
     print("ans:", ans)
-    return jsonify({'status': int(ans['status'])})
+    return jsonify({'status': str(ans['status'])})
+    
+@detect_photos_errors
+def handle_form_photos_py(photo01, photo02, photo_type: PhotoType):
+    content = photo01.read(-1)
+    content02 = photo02.read(-1)
+    tmpGenderImg = os.path.join(".",photo01.name)
+    tmpGenderImg02 = os.path.join(".",photo02.name)
+    destination = open(tmpGenderImg,'wb+')    # 打开特定的文件进行二进制的写操作
+    destination.write(content)
+    destination02 = open(tmpGenderImg02,'wb+')    # 打开特定的文件进行二进制的写操作
+    destination02.write(content02)
+    destination02.close()
+    rst = 0
+    if photo_type == PhotoType.genderDetect:
+        rst = predictGender(tmpGenderImg)
+    if photo_type == PhotoType.faceMatch:
+        rst = faceCompare(tmpGenderImg, tmpGenderImg02)
+    print("type(rst):", type(rst)) 
+    ans = {}
+    ans['status'] = rst
+    print("ans:", ans)
+    return jsonify({'status': float(ans['status'])})
     
 
 
@@ -127,8 +173,12 @@ def faceKps():
 def genderDetect():
     return handle_form_photo_py(PhotoType.genderDetect)
 
+@app.route('/api/photos/faceVerify', methods=['POST'])
+def faceMatch():
+    return handle_form_photo_py(PhotoType.faceMatch)
+
 def analyze(content: bytes, photo_type: PhotoType):
-    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect, PhotoType.faceKps, PhotoType.genderDetect), 'internal error, invalid photo type: %r' % (photo_type, )
+    assert photo_type in (PhotoType.autoPhoto, PhotoType.autoPhotoTongue, PhotoType.envtDetect, PhotoType.faceKps), 'internal error, invalid photo type: %r' % (photo_type, )
     result = ANALYZE_FUNCTIONS[photo_type](content)
     ans = result.to_dict()
     return ans
