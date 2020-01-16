@@ -29,7 +29,7 @@ class PhotoType(Enum):
     genderDetect = 5
     faceMatch = 6
     faceMatchEmd = 7
-    getEmdDirect = 7
+    getEmdDirect = 8
 
 
 ANALYZE_FUNCTIONS = {
@@ -77,11 +77,9 @@ def detect_photos_errors(f):
 def detect_emds_errors(f):
     @wraps(f)
     def _f(*args, **kwargs):
-        print("request.dict:", request.__dict__)
-        print("request.data:", request.data)
-        print("request.data.type:", type(request.data))
+        # bytes to dict 
         params = eval(request.data)
-        print("params.type:", type(params))
+        #params = json.loads(request.data.decode())
         photo01 = params['photo01']
         photo02 = params['photo02']
         #if not photo01.filename or not allowed_file(photo01.filename):
