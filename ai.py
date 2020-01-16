@@ -107,8 +107,6 @@ def handle_form_photo(photo, photo_type: PhotoType):
         return jsonify(ans)
     elif photo_type == PhotoType.faceMatchEmd:
         return jsonify(ans)
-    elif photo_type == PhotoType.getEmdDirect:
-        return jsonify(ans)
     elif photo_type == PhotoType.envtDetect:
         return jsonify({
             'level': ans['level'],
@@ -137,6 +135,7 @@ def handle_form_photo_py(photo, photo_type: PhotoType):
         rst = faceVerify(tmpGenderImg)
     if photo_type == PhotoType.getEmdDirect:
         rst = getEmdDirect(tmpGenderImg)
+        rst = json.dumps(rst)
     ans = {}
     ans['status'] = rst
     return jsonify({'status': str(ans['status'])})
