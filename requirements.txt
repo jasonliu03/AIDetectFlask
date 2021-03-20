@@ -6,7 +6,7 @@ Flask==1.0.2
 get==2018.11.19
 html5lib==0.9999999
 itsdangerous==1.1.0
-Jinja2==2.10
+Jinja2==2.11.3
 joblib==0.13.2
 kiwisolver==1.1.0
 Markdown==3.1
