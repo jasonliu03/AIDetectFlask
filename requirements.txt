@@ -4,7 +4,7 @@ cycler==0.10.0
 enum34==1.1.6
 Flask==1.0.2
 get==2018.11.19
-html5lib==0.9999999
+html5lib==0.99999999
 itsdangerous==1.1.0
 Jinja2==2.10
 joblib==0.13.2
