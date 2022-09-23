@@ -15,7 +15,7 @@ matplotlib==3.0.3
 numpy==1.16.3
 Pillow==6.0.0
 post==2018.11.20
-protobuf==3.7.1
+protobuf==3.18.3
 public==2018.11.20
 -e git+https://jasonliu003@bitbucket.org/zhiyuntcm/pydiagnosis.git@189092746dab85329f65036fe7e648691c5117dd#egg=pydiagnosis
 pyparsing==2.4.0
